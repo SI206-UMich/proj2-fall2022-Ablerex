@@ -1,10 +1,14 @@
+# Your name: Alex Brand
+# Your student id: 15621136
+# Your email: ablerex@umich.edu
+# List who you have worked with on this project:
+
 from xml.sax import parseString
 from bs4 import BeautifulSoup
 import re
 import os
 import csv
 import unittest
-
 
 def get_listings_from_search_results(html_file):
     """
