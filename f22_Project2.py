@@ -29,7 +29,42 @@ def get_listings_from_search_results(html_file):
         ('Loft in Mission District', 210, '1944564'),  # example
     ]
     """
-    pass
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    full_path = os.path.join(base_path, html_file)
+    file_obj = open(full_path, 'r')
+    soup = BeautifulSoup(file_obj, "html.parser")
+    file_obj.close()
+
+    #print(soup)
+
+    listing_list = []
+    price_list = []
+    id_list = []
+    id_pattern = r"\d+"
+
+    listings = soup.find_all('div', class_ = "t1jojoys dir dir-ltr")
+    price = soup.find_all('span', class_ = "_tyxjp1")
+    
+    for l in listings:
+        listing_list.append(l.text)
+        match = re.findall(id_pattern, l['id'])
+        id_list.append(match[0])
+
+    for p in price:
+        price_list.append(int((p.text).strip('$')))
+
+    listings = list(zip(listing_list, price_list, id_list))
+
+    #listing_info = list(map(lambda x,y,z:(x,y,z), listing_list, price_list, id_list))
+        
+    #print(listing_list)
+    #print(price_list)
+    #print(id_list)
+
+    #print(listing_info)
+    #print(len(listing_info))
+
+    return listings
 
 
 def get_listing_information(listing_id):
@@ -44,21 +79,50 @@ def get_listing_information(listing_id):
             the three categories.
         string - Place type: either "Entire Room", "Private Room", or "Shared Room"
             Note that this data field is not explicitly given from this page. Use the
-            following to categorize the data into these three fields.
+            following to categorize the data into these three fields. (NOTE: COME BACK TO THIS AFTER WRITING CSV)
                 "Private Room": the listing subtitle has the word "private" in it
                 "Shared Room": the listing subtitle has the word "shared" in it
                 "Entire Room": the listing subtitle has neither the word "private" nor "shared" in it
         int - Number of bedrooms
 .
     (
-        policy number,
-        place type,
-        number of bedrooms
+        policy number, NOTE: li to target = Class to grab = f19phm7j dir dir-ltr      Span with data ll4r2nl dir dir-ltr
+        place type, NOTE: h2 to target = Class to grab = _14i3z6h
+        number of bedrooms, NOTE: li to target = Class to grab l7n4lsf dir dir-ltr inner <span> with text
     )
     """
-    pass
+    filename = "html_files/listing_" + listing_id + ".html"
+    with open(filename, 'r') as listing:
+        soup = BeautifulSoup(listing, "html.parser")
+        place_type = ""
 
+        policy_line = soup.find('li', class_ = "f19phm7j dir dir-ltr")
+        policy_info = policy_line.find('span', 'll4r2nl dir dir-ltr')
+        policy_number = policy_info.text
 
+        place_line = soup.find('h2', class_ = "_14i3z6h")
+        place_info = place_line.text
+
+        room_number_line = soup.find_all('li', class_ = 'l7n4lsf dir dir-ltr')[1]
+        room_number_info = room_number_line.find_all('span', None)[2]
+        room_number = room_number_info.text
+        
+
+        if place_info.__contains__("Private") or place_info.__contains__("private"):
+            place_type = "Private Room"
+        elif place_info.__contains__("Shared") or place_info.__contains__("shared"):
+            place_type = "Shared Room"
+        else:
+            place_type = "Entire Room"
+
+        #print(policy_number)
+        #print(place_type)
+        #print(room_number)
+
+        listing_info = (policy_number, place_type, room_number)
+
+        return listing_info
+        
 def get_detailed_listing_database(html_file):
     """
     Write a function that calls the above two functions in order to return
@@ -73,6 +137,18 @@ def get_detailed_listing_database(html_file):
         ...
     ]
     """
+    data = get_listings_from_search_results(html_file)
+    info_tups = []
+    listing_database = []
+
+    for tup in data:
+         info_tups.append(get_listing_information(tup[2]))
+
+    for i in range(len(data)):
+        listing_database.append(data[i] + info_tups[i])
+
+    #print(listing_database)
+    #print(data)
     pass
 
 
@@ -151,13 +227,13 @@ class TestCases(unittest.TestCase):
         # check that the variable you saved after calling the function is a list
         self.assertEqual(type(listings), list)
         # check that each item in the list is a tuple
-
+        self.assertTrue(type(listings[0]), tuple)
         # check that the first title, cost, and listing id tuple is correct (open the search results html and find it)
-
+        self.assertEqual(listings[0], ('Loft in Mission District', 210, '1944564') )
         # check that the last title is correct (open the search results html and find it)
-        pass
+        self.assertEqual(listings[-1], ('Guest suite in Mission District', 238, '32871760'))
 
-    def test_get_listing_information(self):
+    """def test_get_listing_information(self):
         html_list = ["1623609",
                      "1944564",
                      "1550913",
@@ -183,9 +259,9 @@ class TestCases(unittest.TestCase):
 
         # check that the third listing has one bedroom
 
-        pass
+        pass"""
 
-    def test_get_detailed_listing_database(self):
+    """def test_get_detailed_listing_database(self):
         # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
         # and save it to a variable
         detailed_database = get_detailed_listing_database("html_files/mission_district_search_results.html")
@@ -239,10 +315,14 @@ class TestCases(unittest.TestCase):
         # check that the element in the list is a string
 
         # check that the first element in the list is '16204265'
-        pass
+        pass"""
 
 
 if __name__ == '__main__':
+    data = get_listings_from_search_results("html_files/mission_district_search_results.html")
+    listing_id_info = get_listing_information("1550913")
+    listing_id_info = get_listing_information("6600081")
+
     database = get_detailed_listing_database("html_files/mission_district_search_results.html")
     write_csv(database, "airbnb_dataset.csv")
     check_policy_numbers(database)
