@@ -227,7 +227,7 @@ def check_policy_numbers(data):
             print(i[2])
             bad_pol_nums.append(i[2])
     
-    print(bad_pol_nums)    
+    #print(bad_pol_nums)    
     return bad_pol_nums
 
 
@@ -244,8 +244,31 @@ def extra_credit(listing_id):
     every reviewer only stayed for one day), return False, indicating the lister has
     gone over their 90 day limit, else return True, indicating the lister has
     never gone over their limit.
+    li for date "_1f1oir5"
     """
-    pass
+    file_name = "html_files/listing_" + listing_id + "_reviews.html"
+    with open(file_name, "r") as reviews:
+        soup = BeautifulSoup(reviews, "html.parser")
+        #print(soup)
+        date_list = []
+        year_count = {}
+        date = soup.find_all("li", class_="_1f1oir5")
+
+        for li in date:
+            date_list.append(li.text)
+
+        for date in date_list:
+            #print(date[-4:])
+            if date[-4:] not in year_count:
+                year_count[date[-4:]] = 1
+            else:
+                year_count[date[-4:]] += 1
+
+        for k , v in year_count.items():
+            if v > 90:
+                return False
+        return True
+
 
 
 class TestCases(unittest.TestCase):
@@ -352,6 +375,11 @@ class TestCases(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    is_good1 = extra_credit("1944564")
+    is_good2 = extra_credit("16204265")
+    print("The listing is legal ", is_good1)
+    print("The listing is legal ", is_good2)
+
     data = get_listings_from_search_results("html_files/mission_district_search_results.html")
     listing_id_info = get_listing_information("1550913")
     listing_id_info = get_listing_information("6600081")
